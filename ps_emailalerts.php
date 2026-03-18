@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types=1);
 /**
  * Copyright since 2007 PrestaShop SA and Contributors
  * PrestaShop is an International Registered Trademark & Property of PrestaShop SA
@@ -409,7 +411,10 @@ class Ps_EmailAlerts extends Module
                 'PS_MAIL_PASSWD',
                 'PS_SHOP_NAME',
                 'PS_MAIL_COLOR',
-            ], $id_lang, null, $id_shop
+            ],
+            $id_lang,
+            null,
+            $id_shop
         );
         $delivery = new Address((int) $order->id_address_delivery);
         $invoice = new Address((int) $order->id_address_invoice);
@@ -539,13 +544,17 @@ class Ps_EmailAlerts extends Module
             '{delivery_block_txt}' => MailAlert::getFormatedAddress($delivery, "\n"),
             '{invoice_block_txt}' => MailAlert::getFormatedAddress($invoice, "\n"),
             '{delivery_block_html}' => MailAlert::getFormatedAddress(
-                $delivery, '<br />', [
+                $delivery,
+                '<br />',
+                [
                     'firstname' => '<span style="color:' . $configuration['PS_MAIL_COLOR'] . '; font-weight:bold;">%s</span>',
                     'lastname' => '<span style="color:' . $configuration['PS_MAIL_COLOR'] . '; font-weight:bold;">%s</span>',
                 ]
             ),
             '{invoice_block_html}' => MailAlert::getFormatedAddress(
-                $invoice, '<br />', [
+                $invoice,
+                '<br />',
+                [
                     'firstname' => '<span style="color:' . $configuration['PS_MAIL_COLOR'] . '; font-weight:bold;">%s</span>',
                     'lastname' => '<span style="color:' . $configuration['PS_MAIL_COLOR'] . '; font-weight:bold;">%s</span>',
                 ]
@@ -641,7 +650,8 @@ class Ps_EmailAlerts extends Module
                             $order->reference,
                         ],
                         'Emails.Subject',
-                        $locale),
+                        $locale
+                    ),
                     $template_vars,
                     $merchant_mail,
                     null,
@@ -713,7 +723,10 @@ class Ps_EmailAlerts extends Module
                 'PS_STOCK_MANAGEMENT',
                 'PS_SHOP_EMAIL',
                 'PS_SHOP_NAME',
-            ], null, null, $id_shop
+            ],
+            null,
+            null,
+            $id_shop
         );
         $ma_last_qties = (int) $configuration['MA_LAST_QTIES'];
         $check_oos = ($product_has_attributes && $id_product_attribute) || (!$product_has_attributes && !$id_product_attribute);
@@ -933,7 +946,10 @@ class Ps_EmailAlerts extends Module
                 'PS_MAIL_PASSWD',
                 'PS_SHOP_NAME',
                 'PS_MAIL_COLOR',
-            ], $id_lang, null, $id_shop
+            ],
+            $id_lang,
+            null,
+            $id_shop
         );
 
         // Shop iso
@@ -974,13 +990,17 @@ class Ps_EmailAlerts extends Module
             '{delivery_block_txt}' => MailAlert::getFormatedAddress($delivery, "\n"),
             '{invoice_block_txt}' => MailAlert::getFormatedAddress($invoice, "\n"),
             '{delivery_block_html}' => MailAlert::getFormatedAddress(
-                $delivery, '<br />', [
+                $delivery,
+                '<br />',
+                [
                     'firstname' => '<span style="color:' . $configuration['PS_MAIL_COLOR'] . '; font-weight:bold;">%s</span>',
                     'lastname' => '<span style="color:' . $configuration['PS_MAIL_COLOR'] . '; font-weight:bold;">%s</span>',
                 ]
             ),
             '{invoice_block_html}' => MailAlert::getFormatedAddress(
-                $invoice, '<br />', [
+                $invoice,
+                '<br />',
+                [
                     'firstname' => '<span style="color:' . $configuration['PS_MAIL_COLOR'] . '; font-weight:bold;">%s</span>',
                     'lastname' => '<span style="color:' . $configuration['PS_MAIL_COLOR'] . '; font-weight:bold;">%s</span>',
                 ]
@@ -1109,7 +1129,14 @@ class Ps_EmailAlerts extends Module
             $data,
             $order->getCustomer()->email,
             $order->getCustomer()->firstname . ' ' . $order->getCustomer()->lastname,
-            null, null, null, null, _PS_MAIL_DIR_, true, (int) $order->id_shop);
+            null,
+            null,
+            null,
+            null,
+            _PS_MAIL_DIR_,
+            true,
+            (int) $order->id_shop
+        );
     }
 
     public function renderForm()
