@@ -26,7 +26,7 @@ if (file_exists($autoloadPath)) {
     require_once $autoloadPath;
 }
 
-include_once dirname(__FILE__) . '/MailAlert.php';
+include_once __DIR__ . '/MailAlert.php';
 
 class Ps_EmailAlerts extends Module
 {
@@ -252,7 +252,7 @@ class Ps_EmailAlerts extends Module
                 }
                 $new_order_emails = implode(self::__MA_MAIL_DELIMITER__, $new_order_emails);
 
-                if (!Configuration::updateValue('MA_MERCHANT_ORDER_EMAILS', (string) $new_order_emails)) {
+                if (!Configuration::updateValue('MA_MERCHANT_ORDER_EMAILS', $new_order_emails)) {
                     $errors[] = $this->trans('Cannot update new order emails.', [], 'Modules.Emailalerts.Admin');
                 }
             }
@@ -276,7 +276,7 @@ class Ps_EmailAlerts extends Module
                 }
                 $outofstock_emails = implode(self::__MA_MAIL_DELIMITER__, $outofstock_emails);
 
-                if (!Configuration::updateValue('MA_MERCHANT_OOS_EMAILS', (string) $outofstock_emails)) {
+                if (!Configuration::updateValue('MA_MERCHANT_OOS_EMAILS', $outofstock_emails)) {
                     $errors[] = $this->trans('Cannot update email for "out of stock" notifications.', [], 'Modules.Emailalerts.Admin');
                 }
             }
@@ -300,7 +300,7 @@ class Ps_EmailAlerts extends Module
                 }
                 $return_slip_emails = implode(self::__MA_MAIL_DELIMITER__, $return_slip_emails);
 
-                if (!Configuration::updateValue('MA_RETURN_SLIP_EMAILS', (string) $return_slip_emails)) {
+                if (!Configuration::updateValue('MA_RETURN_SLIP_EMAILS', $return_slip_emails)) {
                     $errors[] = $this->trans('Cannot update "return slip" emails.', [], 'Modules.Emailalerts.Admin');
                 }
             }
@@ -347,10 +347,8 @@ class Ps_EmailAlerts extends Module
     /**
      * Return current locale
      *
-     * @param Context $context
      *
      * @return PrestaShop\PrestaShop\Core\Localization\Locale|null
-     *
      * @throws Exception
      */
     public static function getContextLocale(Context $context)
@@ -369,15 +367,14 @@ class Ps_EmailAlerts extends Module
 
         /** @var PrestaShop\PrestaShop\Core\Localization\CLDR\LocaleRepository $localeRepository */
         $localeRepository = $container->get(Controller::SERVICE_LOCALE_REPOSITORY);
-        $locale = $localeRepository->getLocale(
-            $context->language->getLocale()
-        );
 
         // @phpstan-ignore-next-line
-        return $locale;
+        return $localeRepository->getLocale(
+            $context->language->getLocale()
+        );
     }
 
-    public function hookActionValidateOrder($params)
+    public function hookActionValidateOrder($params): void
     {
         if (!$this->merchant_order || empty($this->merchant_new_order_emails)) {
             return;
@@ -561,8 +558,8 @@ class Ps_EmailAlerts extends Module
             '{delivery_city}' => $delivery->city,
             '{delivery_postal_code}' => $delivery->postcode,
             '{delivery_country}' => $delivery->country,
-            '{delivery_state}' => isset($delivery_state->name) ? $delivery_state->name : '',
-            '{delivery_phone}' => $delivery->phone ? $delivery->phone : $delivery->phone_mobile,
+            '{delivery_state}' => $delivery_state->name ?? '',
+            '{delivery_phone}' => $delivery->phone ?: $delivery->phone_mobile,
             '{delivery_other}' => $delivery->other,
             '{invoice_company}' => $invoice->company,
             '{invoice_firstname}' => $invoice->firstname,
@@ -572,8 +569,8 @@ class Ps_EmailAlerts extends Module
             '{invoice_city}' => $invoice->city,
             '{invoice_postal_code}' => $invoice->postcode,
             '{invoice_country}' => $invoice->country,
-            '{invoice_state}' => isset($invoice_state->name) ? $invoice_state->name : '',
-            '{invoice_phone}' => $invoice->phone ? $invoice->phone : $invoice->phone_mobile,
+            '{invoice_state}' => $invoice_state->name ?? '',
+            '{invoice_phone}' => $invoice->phone ?: $invoice->phone_mobile,
             '{invoice_other}' => $invoice->other,
             '{order_name}' => $order->reference,
             '{order_status}' => $order_state->name,
@@ -623,9 +620,9 @@ class Ps_EmailAlerts extends Module
             }
 
             $dir_mail = false;
-            if (file_exists(dirname(__FILE__) . '/mails/' . $mail_iso . '/new_order.txt')
-                && file_exists(dirname(__FILE__) . '/mails/' . $mail_iso . '/new_order.html')) {
-                $dir_mail = dirname(__FILE__) . '/mails/';
+            if (file_exists(__DIR__ . '/mails/' . $mail_iso . '/new_order.txt')
+                && file_exists(__DIR__ . '/mails/' . $mail_iso . '/new_order.html')) {
+                $dir_mail = __DIR__ . '/mails/';
             }
 
             if (file_exists(_PS_MAIL_DIR_ . $mail_iso . '/new_order.txt')
@@ -688,7 +685,7 @@ class Ps_EmailAlerts extends Module
         return $this->display(__FILE__, 'product.tpl');
     }
 
-    public function hookActionUpdateQuantity($params)
+    public function hookActionUpdateQuantity($params): void
     {
         // Do not send email if stock did not change
         if (isset($params['delta_quantity']) && (int) $params['delta_quantity'] === 0) {
@@ -722,7 +719,7 @@ class Ps_EmailAlerts extends Module
         $check_oos = ($product_has_attributes && $id_product_attribute) || (!$product_has_attributes && !$id_product_attribute);
 
         if ($check_oos
-            && (int) $quantity <= $ma_last_qties
+            && $quantity <= $ma_last_qties
             && !(!$this->merchant_oos || empty($this->merchant_oos_emails))
             && $configuration['PS_STOCK_MANAGEMENT']) {
             $iso = Language::getIsoById($id_lang);
@@ -735,8 +732,8 @@ class Ps_EmailAlerts extends Module
 
             // Do not send mail if multiples product are created / imported.
             if (!defined('PS_MASS_PRODUCT_CREATION')
-                && file_exists(dirname(__FILE__) . '/mails/' . $iso . '/productoutofstock.txt')
-                && file_exists(dirname(__FILE__) . '/mails/' . $iso . '/productoutofstock.html')) {
+                && file_exists(__DIR__ . '/mails/' . $iso . '/productoutofstock.txt')
+                && file_exists(__DIR__ . '/mails/' . $iso . '/productoutofstock.html')) {
                 // Send 1 email by merchant mail, because Mail::Send doesn't work with an array of recipients
                 $merchant_oos_emails = explode(self::__MA_MAIL_DELIMITER__, $this->merchant_oos_emails);
                 foreach ($merchant_oos_emails as $merchant_mail) {
@@ -751,7 +748,7 @@ class Ps_EmailAlerts extends Module
                         (string) $configuration['PS_SHOP_NAME'],
                         null,
                         null,
-                        dirname(__FILE__) . '/mails/',
+                        __DIR__ . '/mails/',
                         false,
                         $id_shop
                     );
@@ -762,7 +759,7 @@ class Ps_EmailAlerts extends Module
         if ($product_has_attributes) {
             $sql = 'SELECT `minimal_quantity`, `id_product_attribute`
                 FROM ' . _DB_PREFIX_ . 'product_attribute
-                WHERE id_product_attribute = ' . (int) $id_product_attribute;
+                WHERE id_product_attribute = ' . $id_product_attribute;
 
             $result = Db::getInstance()->getRow($sql);
 
@@ -776,7 +773,7 @@ class Ps_EmailAlerts extends Module
         }
     }
 
-    public function hookActionProductAttributeUpdate($params)
+    public function hookActionProductAttributeUpdate($params): void
     {
         $sql = 'SELECT sa.`id_product`, sa.`quantity`, pa.`minimal_quantity`
             FROM `' . _DB_PREFIX_ . 'stock_available` sa
@@ -800,7 +797,7 @@ class Ps_EmailAlerts extends Module
         return $this->customer_qty ? $this->display(__FILE__, 'my-account-footer.tpl') : null;
     }
 
-    public function hookActionProductDelete($params)
+    public function hookActionProductDelete($params): void
     {
         $sql = '
 			DELETE FROM `' . _DB_PREFIX_ . MailAlert::$definition['table'] . '`
@@ -809,7 +806,7 @@ class Ps_EmailAlerts extends Module
         Db::getInstance()->execute($sql);
     }
 
-    public function hookActionProductAttributeDelete($params)
+    public function hookActionProductAttributeDelete($params): void
     {
         if ($params['deleteAllAttributes']) {
             $sql = '
@@ -825,7 +822,7 @@ class Ps_EmailAlerts extends Module
         Db::getInstance()->execute($sql);
     }
 
-    public function hookActionProductCoverage($params)
+    public function hookActionProductCoverage($params): void
     {
         // if not advanced stock management, nothing to do
         if (!Configuration::get('PS_ADVANCED_STOCK_MANAGEMENT')) {
@@ -874,8 +871,8 @@ class Ps_EmailAlerts extends Module
                 '{product}' => pSQL($product_name),
             ];
 
-            if (file_exists(dirname(__FILE__) . '/mails/' . $iso . '/productcoverage.txt')
-                && file_exists(dirname(__FILE__) . '/mails/' . $iso . '/productcoverage.html')) {
+            if (file_exists(__DIR__ . '/mails/' . $iso . '/productcoverage.txt')
+                && file_exists(__DIR__ . '/mails/' . $iso . '/productcoverage.html')) {
                 // Send 1 email by merchant mail, because Mail::Send doesn't work with an array of recipients
                 $merchant_oos_emails = explode(self::__MA_MAIL_DELIMITER__, $this->merchant_oos);
                 foreach ($merchant_oos_emails as $merchant_mail) {
@@ -890,7 +887,7 @@ class Ps_EmailAlerts extends Module
                         (string) Configuration::get('PS_SHOP_NAME'),
                         null,
                         null,
-                        dirname(__FILE__) . '/mails/',
+                        __DIR__ . '/mails/',
                         false,
                         $id_shop
                     );
@@ -899,7 +896,7 @@ class Ps_EmailAlerts extends Module
         }
     }
 
-    public function hookActionFrontControllerSetMedia()
+    public function hookActionFrontControllerSetMedia(): void
     {
         $this->context->controller->registerJavascript(
             'mailalerts-js',
@@ -907,7 +904,7 @@ class Ps_EmailAlerts extends Module
         );
     }
 
-    public function hookActionAdminControllerSetMedia()
+    public function hookActionAdminControllerSetMedia(): void
     {
         $this->context->controller->addJS($this->_path . 'js/admin/' . $this->name . '.js');
     }
@@ -917,7 +914,7 @@ class Ps_EmailAlerts extends Module
      *
      * @param array $params Hook params
      */
-    public function hookActionOrderReturn($params)
+    public function hookActionOrderReturn($params): void
     {
         if (!$this->return_slip || empty($this->merchant_return_slip_emails)) {
             return;
@@ -996,8 +993,8 @@ class Ps_EmailAlerts extends Module
             '{delivery_city}' => $delivery->city,
             '{delivery_postal_code}' => $delivery->postcode,
             '{delivery_country}' => $delivery->country,
-            '{delivery_state}' => isset($delivery_state->name) ? $delivery_state->name : '',
-            '{delivery_phone}' => isset($delivery->phone) ? $delivery->phone : $delivery->phone_mobile,
+            '{delivery_state}' => $delivery_state->name ?? '',
+            '{delivery_phone}' => $delivery->phone ?? $delivery->phone_mobile,
             '{delivery_other}' => $delivery->other,
             '{invoice_company}' => $invoice->company,
             '{invoice_firstname}' => $invoice->firstname,
@@ -1007,8 +1004,8 @@ class Ps_EmailAlerts extends Module
             '{invoice_city}' => $invoice->city,
             '{invoice_postal_code}' => $invoice->postcode,
             '{invoice_country}' => $invoice->country,
-            '{invoice_state}' => isset($invoice_state->name) ? $invoice_state->name : '',
-            '{invoice_phone}' => isset($invoice->phone) ? $invoice->phone : $invoice->phone_mobile,
+            '{invoice_state}' => $invoice_state->name ?? '',
+            '{invoice_phone}' => $invoice->phone ?? $invoice->phone_mobile,
             '{invoice_other}' => $invoice->other,
             '{order_name}' => $order->reference,
             '{shop_name}' => $configuration['PS_SHOP_NAME'],
@@ -1040,9 +1037,9 @@ class Ps_EmailAlerts extends Module
             }
 
             $dir_mail = false;
-            if (file_exists(dirname(__FILE__) . '/mails/' . $mail_iso . '/return_slip.txt')
-                && file_exists(dirname(__FILE__) . '/mails/' . $mail_iso . '/return_slip.html')) {
-                $dir_mail = dirname(__FILE__) . '/mails/';
+            if (file_exists(__DIR__ . '/mails/' . $mail_iso . '/return_slip.txt')
+                && file_exists(__DIR__ . '/mails/' . $mail_iso . '/return_slip.html')) {
+                $dir_mail = __DIR__ . '/mails/';
             }
 
             if (file_exists(_PS_MAIL_DIR_ . $mail_iso . '/return_slip.txt')
@@ -1083,7 +1080,7 @@ class Ps_EmailAlerts extends Module
      *
      * @param array $params Hook params
      */
-    public function hookActionOrderEdited($params)
+    public function hookActionOrderEdited($params): void
     {
         if (!$this->order_edited || empty($this->order_edited)) {
             return;
@@ -1310,7 +1307,7 @@ class Ps_EmailAlerts extends Module
         $lang = new Language((int) Configuration::get('PS_LANG_DEFAULT'));
         $helper->default_form_language = $lang->id;
         $helper->module = $this;
-        $helper->allow_employee_form_lang = Configuration::get('PS_BO_ALLOW_EMPLOYEE_FORM_LANG') ? Configuration::get('PS_BO_ALLOW_EMPLOYEE_FORM_LANG') : 0;
+        $helper->allow_employee_form_lang = Configuration::get('PS_BO_ALLOW_EMPLOYEE_FORM_LANG') ?: 0;
         $helper->identifier = $this->identifier;
         $helper->submit_action = 'submitMailAlertConfiguration';
         $helper->currentIndex = $this->context->link->getAdminLink('AdminModules', false)
@@ -1372,7 +1369,7 @@ class Ps_EmailAlerts extends Module
     /**
      * empty listener for registerGDPRConsent hook
      */
-    public function hookRegisterGDPRConsent()
+    public function hookRegisterGDPRConsent(): void
     {
         /*
          * registerGDPRConsent is a special kind of hook that doesn't need a listener, see :

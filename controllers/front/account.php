@@ -23,7 +23,7 @@
  */
 class Ps_EmailAlertsAccountModuleFrontController extends ModuleFrontController
 {
-    public function init()
+    public function init(): void
     {
         parent::init();
 
@@ -42,7 +42,7 @@ class Ps_EmailAlertsAccountModuleFrontController extends ModuleFrontController
         return $breadcrumb;
     }
 
-    public function initContent()
+    public function initContent(): void
     {
         parent::initContent();
 

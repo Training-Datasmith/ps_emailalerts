@@ -161,7 +161,7 @@ class MailAlert extends ObjectModel
         return $products;
     }
 
-    public static function sendCustomerAlert($id_product, $id_product_attribute)
+    public static function sendCustomerAlert($id_product, $id_product_attribute): void
     {
         $link = new Link();
         $context = Context::getContext();
@@ -197,8 +197,8 @@ class MailAlert extends ObjectModel
 
             $translator = Context::getContext()->getTranslatorFromLocale($locale);
 
-            if (file_exists(dirname(__FILE__) . '/mails/' . $iso . '/customer_qty.txt')
-                && file_exists(dirname(__FILE__) . '/mails/' . $iso . '/customer_qty.html')) {
+            if (file_exists(__DIR__ . '/mails/' . $iso . '/customer_qty.txt')
+                && file_exists(__DIR__ . '/mails/' . $iso . '/customer_qty.html')) {
                 try {
                     Mail::Send(
                         $id_lang,
@@ -211,7 +211,7 @@ class MailAlert extends ObjectModel
                         (string) Configuration::get('PS_SHOP_NAME', null, null, $id_shop),
                         null,
                         null,
-                        dirname(__FILE__) . '/mails/',
+                        __DIR__ . '/mails/',
                         false,
                         $id_shop
                     );

@@ -21,7 +21,7 @@ if (!defined('_PS_VERSION_')) {
     exit;
 }
 
-function upgrade_module_2_4_0($object)
+function upgrade_module_2_4_0($object): bool
 {
     $result = true;
 

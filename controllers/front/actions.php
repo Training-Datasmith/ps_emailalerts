@@ -29,7 +29,7 @@ class Ps_EmailAlertsActionsModuleFrontController extends ModuleFrontController
     public $id_product;
     public $id_product_attribute;
 
-    public function init()
+    public function init(): void
     {
         parent::init();
 
@@ -38,7 +38,7 @@ class Ps_EmailAlertsActionsModuleFrontController extends ModuleFrontController
         $this->id_product_attribute = (int) Tools::getValue('id_product_attribute');
     }
 
-    public function postProcess()
+    public function postProcess(): void
     {
         if (Tools::getValue('process') == 'remove') {
             $this->processRemove();
@@ -53,7 +53,7 @@ class Ps_EmailAlertsActionsModuleFrontController extends ModuleFrontController
      * Remove product alert.
      * Prints 0 if success
      */
-    public function processRemove()
+    public function processRemove(): void
     {
         // check if product exists
         $product = new Product($this->id_product);
@@ -78,7 +78,7 @@ class Ps_EmailAlertsActionsModuleFrontController extends ModuleFrontController
     /**
      * Add a favorite product.
      */
-    public function processAdd()
+    public function processAdd(): void
     {
         $context = Context::getContext();
 
@@ -106,7 +106,6 @@ class Ps_EmailAlertsActionsModuleFrontController extends ModuleFrontController
         $product = new Product($id_product, false, $id_lang, $id_shop, $context);
 
         $mail_alert = MailAlert::customerHasNotification($id_customer, $id_product, $id_product_attribute, $id_shop, null, $customer_email);
-
         if ($mail_alert) {
             exit(json_encode(
                 [
@@ -114,7 +113,9 @@ class Ps_EmailAlertsActionsModuleFrontController extends ModuleFrontController
                     'message' => $this->trans('You already have set an alert for this product.', [], 'Modules.Emailalerts.Shop'),
                 ]
             ));
-        } elseif (!Validate::isLoadedObject($product)) {
+        }
+
+        if (!Validate::isLoadedObject($product)) {
             exit(json_encode(
                 [
                     'error' => true,
@@ -152,7 +153,7 @@ class Ps_EmailAlertsActionsModuleFrontController extends ModuleFrontController
     /**
      * Add a favorite product.
      */
-    public function processCheck()
+    public function processCheck(): void
     {
         if (!(int) $this->context->customer->logged) {
             exit('0');

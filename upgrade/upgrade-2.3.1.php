@@ -21,7 +21,7 @@ if (!defined('_PS_VERSION_')) {
     exit;
 }
 
-function upgrade_module_2_3_1($object)
+function upgrade_module_2_3_1($object): bool
 {
     return $object->registerHook('actionFrontControllerSetMedia')
         && $object->unregisterHook('displayHeader');

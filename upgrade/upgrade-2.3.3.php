@@ -21,7 +21,7 @@ if (!defined('_PS_VERSION_')) {
     exit;
 }
 
-function upgrade_module_2_3_3($object)
+function upgrade_module_2_3_3($object): bool
 {
     return $object->unregisterHook('registerGDPRConsent')
         && $object->unregisterHook('actionProductOutOfStock');
