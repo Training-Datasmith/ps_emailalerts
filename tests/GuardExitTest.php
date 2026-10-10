@@ -27,10 +27,12 @@ class GuardExitTest extends TestsCase
         $cmd = 'php -d error_reporting=-1 ' . escapeshellarg(__DIR__ . '/bin/check-guard.php') . ' ' . escapeshellarg($file);
         $descriptors = [1 => ['pipe', 'w'], 2 => ['pipe', 'w']];
         $proc = proc_open($cmd, $descriptors, $pipes, __DIR__);
+        $stdout = stream_get_contents($pipes[1]);
         $stderr = stream_get_contents($pipes[2]);
         fclose($pipes[1]);
         fclose($pipes[2]);
         $code = proc_close($proc);
+        $this->assertNoPhpDiagnosticsInOutput($stdout, $stderr);
         $this->assertSame(0, $code);
         $this->assertNotContains('GUARD_NOT_TRIGGERED', $stderr);
     }

@@ -50,6 +50,18 @@ class TestsCase extends PHPUnit\Framework\TestCase
         return $emails;
     }
 
+    protected function assertNoPhpDiagnosticsInOutput($stdout, $stderr)
+    {
+        $markers = ['Notice:', 'Warning:', 'Deprecated:', 'Strict Standards:', 'Fatal error:'];
+        foreach (['stdout' => (string) $stdout, 'stderr' => (string) $stderr] as $label => $text) {
+            foreach ($markers as $marker) {
+                if (strpos($text, $marker) !== false) {
+                    $this->fail('PHP diagnostic in subprocess ' . $label . ': ' . $marker);
+                }
+            }
+        }
+    }
+
     protected function runSubprocess(array $request, $method, array $contextOverrides = [], $defineMass = false)
     {
         $payload = [
@@ -67,6 +79,7 @@ class TestsCase extends PHPUnit\Framework\TestCase
         fclose($pipes[1]);
         fclose($pipes[2]);
         proc_close($proc);
+        $this->assertNoPhpDiagnosticsInOutput($stdout, $stderr);
 
         return [$stdout, $stderr];
     }

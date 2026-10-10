@@ -99,11 +99,12 @@ class MailAlertTest extends TestsCase
             . ' ' . (int) $customerId . ' ' . (int) $langId;
         $descriptors = [1 => ['pipe', 'w'], 2 => ['pipe', 'w']];
         $proc = proc_open($cmd, $descriptors, $pipes);
-        stream_get_contents($pipes[1]);
+        $stdout = stream_get_contents($pipes[1]);
         $stderr = stream_get_contents($pipes[2]);
         fclose($pipes[1]);
         fclose($pipes[2]);
         $code = proc_close($proc);
+        $this->assertNoPhpDiagnosticsInOutput($stdout, $stderr);
 
         return [$code, $stderr];
     }
