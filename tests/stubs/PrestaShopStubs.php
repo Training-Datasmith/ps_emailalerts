@@ -18,6 +18,7 @@ class TestState
     public static $orderShipmentService = null;
     public static $stockCoverage = 3;
     public static $displayCalls = [];
+    public static $addressFormatCalls = [];
 
     public static function reset()
     {
@@ -35,6 +36,7 @@ class TestState
         self::$orderShipmentService = null;
         self::$stockCoverage = 3;
         self::$displayCalls = [];
+        self::$addressFormatCalls = [];
         if (self::$context !== null) {
             self::$context->shop = (object) ['id' => 1];
             self::$context->language = (object) ['id' => 1, 'iso' => 'en'];
@@ -323,7 +325,15 @@ class AddressFormat
 {
     public static function generateAddress(Address $address, $params, $lineSep, $fieldSep, $fieldsStyle = [])
     {
-        return 'ADDR:' . $address->id . ':' . $lineSep;
+        TestState::$addressFormatCalls[] = [
+            'addressId' => $address->id,
+            'params' => $params,
+            'lineSep' => $lineSep,
+            'fieldSep' => $fieldSep,
+            'fieldsStyle' => $fieldsStyle,
+        ];
+
+        return 'formatted-address';
     }
 }
 

@@ -57,7 +57,11 @@ class MailAlertTest extends TestsCase
     public function testGetFormatedAddressDelegates()
     {
         $addr = new Address(9);
-        $this->assertSame('ADDR:9:' . "\n", MailAlert::getFormatedAddress($addr, "\n"));
+        MailAlert::getFormatedAddress($addr, "\n");
+        $this->assertCount(1, TestState::$addressFormatCalls);
+        $this->assertSame(9, (int) TestState::$addressFormatCalls[0]['addressId']);
+        $this->assertSame("\n", TestState::$addressFormatCalls[0]['lineSep']);
+        $this->assertSame(['avoid' => []], TestState::$addressFormatCalls[0]['params']);
     }
 
     public function testSendCustomerAlertSendsAndDeletes()

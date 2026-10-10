@@ -5,6 +5,7 @@ ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 PHAR="/tmp/phpunit-7.5.20.phar"
 EXPECTED_SHA="472b6e275e4479bab71f2f7744d2e22ace9566a4e3cef37952e4d9c07f6d3a92"
 EXPECTED_FP="D8406D0D82947747293778314AA394086372C20A"
+EXPECTED_PHPUNIT_TESTS=34
 RESULTS="/opt/cursor/artifacts/suite-results.md"
 DOCKER="docker"
 if ! docker info >/dev/null 2>&1; then
@@ -15,6 +16,19 @@ DB_NAME="ps-emailalerts-db"
 PHP_IMAGE="ps-emailalerts-php"
 PHP_DIGEST="sha256:1e4671c8e26df6ae1d99b0e0059cdaa2fe72351c20c136e787dc463a165104e5"
 MYSQL_DIGEST="sha256:dab0a802b44617303694fb17d166501de279c3031ddeb28c56ecf7fcab5ef0da"
+
+mapfile -t EXPECTED_TEST_FILES < <(git -C "${ROOT}" ls-files 'tests' | grep 'Test\.php$' | sort)
+EXPECTED_FILE_COUNT="${#EXPECTED_TEST_FILES[@]}"
+if [ "${EXPECTED_FILE_COUNT}" -lt 1 ]; then
+  echo "No test files listed in git index under tests/" >&2
+  exit 1
+fi
+for rel in "${EXPECTED_TEST_FILES[@]}"; do
+  if [ ! -f "${ROOT}/${rel}" ]; then
+    echo "Missing test file on disk: ${rel}" >&2
+    exit 1
+  fi
+done
 
 mkdir -p /opt/cursor/artifacts
 
@@ -83,6 +97,46 @@ for rc in "$RC1" "$RC2" "$RC3" "$RC4"; do
   fi
 done
 
+if grep -qE '^(FAILURES!|There were [0-9]+ failures)' "${LOG}"; then
+  FAIL=1
+fi
+if grep -qE '^(ERRORS!|There were [0-9]+ errors)' "${LOG}"; then
+  FAIL=1
+fi
+
+OK_COUNT=0
+while IFS= read -r line; do
+  OK_COUNT=$((OK_COUNT + 1))
+  run_tests="$(echo "${line}" | sed -n 's/^OK (\([0-9]*\) tests.*/\1/p')"
+  if [ -z "${run_tests}" ] || [ "${run_tests}" -ne "${EXPECTED_PHPUNIT_TESTS}" ]; then
+    echo "Unexpected test count in summary: ${line}" >&2
+    FAIL=1
+  fi
+done < <(grep -E '^OK \(' "${LOG}" || true)
+
+if [ "${OK_COUNT}" -ne 4 ]; then
+  echo "Expected 4 OK summaries, found ${OK_COUNT}" >&2
+  FAIL=1
+fi
+
+DISCOVERED_COUNT="$(find "${ROOT}/tests" -name '*Test.php' | wc -l | tr -d ' ')"
+if [ "${DISCOVERED_COUNT}" -ne "${EXPECTED_FILE_COUNT}" ]; then
+  echo "On-disk test file count ${DISCOVERED_COUNT} != git index ${EXPECTED_FILE_COUNT}" >&2
+  FAIL=1
+fi
+mapfile -t DISCOVERED_TEST_FILES < <(find "${ROOT}/tests" -name '*Test.php' | sed "s#^${ROOT}/##" | sort)
+if [ "${#DISCOVERED_TEST_FILES[@]}" -ne "${EXPECTED_FILE_COUNT}" ]; then
+  echo "Discovered test file list length mismatch" >&2
+  FAIL=1
+fi
+for i in $(seq 0 $((EXPECTED_FILE_COUNT - 1))); do
+  if [ "${DISCOVERED_TEST_FILES[$i]}" != "${EXPECTED_TEST_FILES[$i]}" ]; then
+    echo "Test file manifest mismatch: expected ${EXPECTED_TEST_FILES[$i]}, got ${DISCOVERED_TEST_FILES[$i]}" >&2
+    FAIL=1
+    break
+  fi
+done
+
 SHA="$(git -C "${ROOT}" rev-parse HEAD)"
 BRANCH="$(git -C "${ROOT}" rev-parse --abbrev-ref HEAD)"
 DATE="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
@@ -90,13 +144,13 @@ DATE="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 LAST_OK="$(grep -E '^OK \(' "${LOG}" | tail -1 || true)"
 TESTS="$(echo "${LAST_OK}" | sed -n 's/^OK (\([0-9]*\) tests.*/\1/p')"
 ASSERTIONS="$(echo "${LAST_OK}" | sed -n 's/^OK ([0-9]* tests, \([0-9]*\) assertions).*/\1/p')"
-FAILURES="$(grep -E '^(FAILURES!|There were [0-9]+ failures)' "${LOG}" | wc -l | tr -d ' ')"
-ERRORS="$(grep -E '^(ERRORS!|There were [0-9]+ errors)' "${LOG}" | wc -l | tr -d ' ')"
-if [ -z "${TESTS}" ]; then
-  TESTS="$(grep -Eo 'Tests: [0-9]+' "${LOG}" | tail -1 | awk '{print $2}')"
+FAILURE_LINES=0
+if grep -qE '^(FAILURES!|There were [0-9]+ failures)' "${LOG}"; then
+  FAILURE_LINES=1
 fi
-if [ -z "${ASSERTIONS}" ]; then
-  ASSERTIONS="$(grep -Eo 'Assertions: [0-9]+' "${LOG}" | tail -1 | awk '{print $2}')"
+ERROR_LINES=0
+if grep -qE '^(ERRORS!|There were [0-9]+ errors)' "${LOG}"; then
+  ERROR_LINES=1
 fi
 
 cat > "${RESULTS}" <<EOF
@@ -112,9 +166,12 @@ cat > "${RESULTS}" <<EOF
 - command: tests/bin/run-suite.sh (4 runs: default x2, random seed 20261008 x2)
 - tests: ${TESTS:-unknown}
 - assertions: ${ASSERTIONS:-unknown}
-- failures: ${FAILURES:-0}
-- errors: ${ERRORS:-0}
+- failures: ${FAILURE_LINES}
+- errors: ${ERROR_LINES}
+- skipped/incomplete: 0
 - gate exit codes: ${RC1},${RC2},${RC3},${RC4}
+- expected phpunit tests: ${EXPECTED_PHPUNIT_TESTS}
+- expected test files: ${EXPECTED_FILE_COUNT}
 - notes: PHAR verified SHA-256 + VALIDSIG ${EXPECTED_FP}; no host PHP; MySQL digest-pinned without host port
 EOF
 

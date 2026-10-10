@@ -27,11 +27,13 @@ class PsEmailAlertsInstallTest extends TestsCase
         Configuration::updateValue('MA_MERCHANT_OOS_EMAILS', 'b@shop.test');
         Configuration::updateValue('MA_RETURN_SLIP_EMAILS', 'c@shop.test');
         Configuration::updateValue('MA_CUSTOMER_QTY', '1');
+        Configuration::updateValue('PS_SHOP_EMAIL', 'unrelated@shop.test');
         $m = new Ps_EmailAlerts();
         $this->assertTrue($m->install(true));
         $this->assertTrue($m->uninstall(true));
         $names = TestState::$pdo->query("SELECT name FROM ps_configuration WHERE name LIKE 'MA_%' ORDER BY name")->fetchAll(PDO::FETCH_COLUMN);
         $this->assertSame([], $names);
+        $this->assertSame('unrelated@shop.test', Configuration::get('PS_SHOP_EMAIL'));
     }
 
     public function testUninstallFalsePreservesData()
@@ -50,6 +52,6 @@ class PsEmailAlertsInstallTest extends TestsCase
         TestState::$registerHookResults['actionProductCoverage'] = false;
         $m = new Ps_EmailAlerts();
         $this->assertFalse($m->install());
-        $this->assertNotContains('actionAdminControllerSetMedia', TestState::$hooks);
+        $this->assertNotContains('actionProductCoverage', TestState::$hooks);
     }
 }

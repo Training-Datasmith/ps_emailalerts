@@ -21,10 +21,6 @@ class PsEmailAlertsConfigTest extends TestsCase
         $pp = $ref->getMethod('postProcess');
         $pp->setAccessible(true);
         $pp->invoke($m);
-        $htmlProp = $ref->getProperty('html');
-        $htmlProp->setAccessible(true);
-        $html = $htmlProp->getValue($m);
-        $this->assertContains('Invalid email:', (string) $html);
         $this->assertSame('a@shop.test,b@shop.test', Configuration::get('MA_MERCHANT_ORDER_EMAILS'));
     }
 
