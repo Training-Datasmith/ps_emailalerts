@@ -151,6 +151,9 @@ class Ps_EmailAlerts extends Module
             Configuration::deleteByName('MA_MERCHANT_OOS');
             Configuration::deleteByName('MA_CUSTOMER_QTY');
             Configuration::deleteByName('MA_MERCHANT_MAILS');
+            Configuration::deleteByName('MA_MERCHANT_ORDER_EMAILS');
+            Configuration::deleteByName('MA_MERCHANT_OOS_EMAILS');
+            Configuration::deleteByName('MA_RETURN_SLIP_EMAILS');
             Configuration::deleteByName('MA_LAST_QTIES');
             Configuration::deleteByName('MA_MERCHANT_COVERAGE');
             Configuration::deleteByName('MA_PRODUCT_COVERAGE');
@@ -860,7 +863,7 @@ class Ps_EmailAlerts extends Module
 
         // if we need to send a notification
         if ($product->active == 1
-            && ($coverage < $warning_coverage) && !empty($this->merchant_mails)
+            && ($coverage < $warning_coverage) && !empty($this->merchant_oos_emails)
             && Configuration::getGlobalValue('MA_MERCHANT_COVERAGE')) {
             $context = Context::getContext();
             $id_lang = (int) $context->language->id;
@@ -877,7 +880,7 @@ class Ps_EmailAlerts extends Module
             if (file_exists(dirname(__FILE__) . '/mails/' . $iso . '/productcoverage.txt')
                 && file_exists(dirname(__FILE__) . '/mails/' . $iso . '/productcoverage.html')) {
                 // Send 1 email by merchant mail, because Mail::Send doesn't work with an array of recipients
-                $merchant_oos_emails = explode(self::__MA_MAIL_DELIMITER__, $this->merchant_oos);
+                $merchant_oos_emails = explode(self::__MA_MAIL_DELIMITER__, $this->merchant_oos_emails);
                 foreach ($merchant_oos_emails as $merchant_mail) {
                     Mail::send(
                         $id_lang,
