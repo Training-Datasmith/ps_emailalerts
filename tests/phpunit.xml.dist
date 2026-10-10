@@ -5,6 +5,9 @@
          colors="true"
          beStrictAboutTestsThatDoNotTestAnything="true"
          beStrictAboutOutputDuringTests="true">
+    <php>
+        <ini name="error_reporting" value="-1"/>
+    </php>
     <testsuites>
         <testsuite name="ps_emailalerts">
             <directory suffix="Test.php">.</directory>

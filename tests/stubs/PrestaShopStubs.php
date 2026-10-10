@@ -244,7 +244,7 @@ class Tools
         return htmlspecialchars((string) $str, ENT_QUOTES, 'UTF-8');
     }
 
-    public static function displayError($msg)
+    public static function displayError($msg = '')
     {
         return 'ERROR:' . $msg;
     }
@@ -745,7 +745,7 @@ class Module
         return 'TPL:' . $template;
     }
 
-    public function displayError($msg)
+    public function displayError($msg = '')
     {
         return 'ERROR:' . $msg;
     }
@@ -951,6 +951,7 @@ class Order
                 'product_price_wt' => 12,
                 'product_quantity' => 3,
                 'id_product_attribute' => 0,
+                'product_attribute_id' => 0,
                 'attributes_small' => '',
                 'id_customization' => 0,
             ],

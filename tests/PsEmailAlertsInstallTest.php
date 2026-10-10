@@ -11,14 +11,18 @@ class PsEmailAlertsInstallTest extends TestsCase
 
     public function testInstallRegistersRequiredHooksAndCreatesTable()
     {
+        TestState::$pdo->exec('DROP TABLE IF EXISTS ps_mailalert_customer_oos');
         $m = new Ps_EmailAlerts();
         $this->assertTrue($m->install());
         foreach ($this->requiredHooks as $hook) {
             $this->assertContains($hook, TestState::$hooks);
         }
         $cols = TestState::$pdo->query("SHOW COLUMNS FROM ps_mailalert_customer_oos")->fetchAll(PDO::FETCH_COLUMN);
-        $this->assertContains('id_customer', $cols);
-        $this->assertContains('customer_email', $cols);
+        sort($cols);
+        $this->assertSame(
+            ['customer_email', 'id_customer', 'id_lang', 'id_product', 'id_product_attribute', 'id_shop'],
+            $cols
+        );
     }
 
     public function testUninstallDeletesSplitEmailKeys()
@@ -52,6 +56,6 @@ class PsEmailAlertsInstallTest extends TestsCase
         TestState::$registerHookResults['actionProductCoverage'] = false;
         $m = new Ps_EmailAlerts();
         $this->assertFalse($m->install());
-        $this->assertNotContains('actionProductCoverage', TestState::$hooks);
+        $this->assertNull(Configuration::get('MA_MERCHANT_ORDER'));
     }
 }

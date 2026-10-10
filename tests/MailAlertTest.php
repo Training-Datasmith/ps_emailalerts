@@ -23,10 +23,19 @@ class MailAlertTest extends TestsCase
         TestState::$pdo->exec('INSERT INTO ps_product_shop VALUES (10,1,1)');
         TestState::$pdo->exec("INSERT INTO ps_product_lang VALUES (10,1,1,'Wool','wool')");
         TestState::$pdo->exec("INSERT INTO ps_mailalert_customer_oos VALUES (7,'customer@shop.test',10,0,1,1)");
+        TestState::$pdo->exec("INSERT INTO ps_customer VALUES (8,'other@shop.test')");
+        TestState::$pdo->exec("INSERT INTO ps_product VALUES (11,5,1,1,0)");
+        TestState::$pdo->exec('INSERT INTO ps_product_shop VALUES (11,1,0)');
+        TestState::$pdo->exec("INSERT INTO ps_product_lang VALUES (11,1,1,'Inactive','inactive')");
+        TestState::$pdo->exec("INSERT INTO ps_mailalert_customer_oos VALUES (7,'customer@shop.test',11,0,1,1)");
+        TestState::$pdo->exec("INSERT INTO ps_mailalert_customer_oos VALUES (8,'other@shop.test',10,0,1,1)");
         $customer = new Customer(7);
         $products = MailAlert::getProducts($customer, 1);
-        $this->assertCount(1, $products);
-        $this->assertSame(10, (int) $products[0]['id_product']);
+        $ids = array_map(function ($row) {
+            return (int) $row['id_product'];
+        }, $products);
+        sort($ids);
+        $this->assertSame([10], $ids);
     }
 
     public function testGetProductAttributeCombinationReturnsNames()
@@ -79,37 +88,23 @@ class MailAlertTest extends TestsCase
 
     public function testGetMailAlertsInvalidIdsExitViaDisplayError()
     {
-        list($out, $err) = $this->runGetMailAlertsSubprocess(0, 1);
+        list($code, $err) = $this->runGetMailAlertsSubprocess(0, 1);
+        $this->assertSame(0, $code);
         $this->assertNotContains('DID_NOT_EXIT', $err);
-        $this->assertNotSame('', $out);
     }
 
     private function runGetMailAlertsSubprocess($customerId, $langId)
     {
-        $script = <<<'PHP'
-<?php
-putenv('DB_HOST=' . (getenv('DB_HOST') ?: '127.0.0.1'));
-require __DIR__ . '/bootstrap-module.php';
-TestState::$pdo = tests_connect_pdo();
-tests_create_schema(TestState::$pdo);
-tests_seed_basics(TestState::$pdo);
-ob_start();
-MailAlert::getMailAlerts((int)$argv[1], (int)$argv[2]);
-$out = ob_get_clean();
-echo $out;
-fwrite(STDERR, 'DID_NOT_EXIT');
-PHP;
-        $path = sys_get_temp_dir() . '/getmailalerts.php';
-        file_put_contents($path, $script);
-        $cmd = 'php ' . escapeshellarg($path) . ' ' . (int) $customerId . ' ' . (int) $langId;
+        $cmd = 'php -d error_reporting=-1 ' . escapeshellarg(__DIR__ . '/bin/get-mailalerts.php')
+            . ' ' . (int) $customerId . ' ' . (int) $langId;
         $descriptors = [1 => ['pipe', 'w'], 2 => ['pipe', 'w']];
         $proc = proc_open($cmd, $descriptors, $pipes);
-        $stdout = stream_get_contents($pipes[1]);
+        stream_get_contents($pipes[1]);
         $stderr = stream_get_contents($pipes[2]);
         fclose($pipes[1]);
         fclose($pipes[2]);
-        proc_close($proc);
+        $code = proc_close($proc);
 
-        return [$stdout, $stderr];
+        return [$code, $stderr];
     }
 }

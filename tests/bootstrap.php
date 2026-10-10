@@ -58,7 +58,7 @@ class TestsCase extends PHPUnit\Framework\TestCase
             'context' => $contextOverrides,
             'define_mass' => $defineMass,
         ];
-        $cmd = 'php ' . escapeshellarg(__DIR__ . '/bin/invoke.php') . ' ' . escapeshellarg(json_encode($payload));
+        $cmd = 'php -d error_reporting=-1 ' . escapeshellarg(__DIR__ . '/bin/invoke.php') . ' ' . escapeshellarg(json_encode($payload));
         $descriptors = [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']];
         $proc = proc_open($cmd, $descriptors, $pipes);
         $stdout = stream_get_contents($pipes[1]);

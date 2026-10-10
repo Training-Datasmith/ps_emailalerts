@@ -24,7 +24,7 @@ class GuardExitTest extends TestsCase
 
     private function assertGuardTriggered($file)
     {
-        $cmd = 'php ' . escapeshellarg(__DIR__ . '/bin/check-guard.php') . ' ' . escapeshellarg($file);
+        $cmd = 'php -d error_reporting=-1 ' . escapeshellarg(__DIR__ . '/bin/check-guard.php') . ' ' . escapeshellarg($file);
         $descriptors = [1 => ['pipe', 'w'], 2 => ['pipe', 'w']];
         $proc = proc_open($cmd, $descriptors, $pipes, __DIR__);
         $stderr = stream_get_contents($pipes[2]);
